@@ -4,6 +4,25 @@
 
 // TODO: #[non_exhaustive] to `Signal`.
 
+#![warn(
+    anonymous_parameters,
+    bare_trait_objects,
+    missing_debug_implementations,
+    missing_docs,
+    rust_2018_idioms,
+    trivial_casts,
+    trivial_numeric_casts,
+    unused_extern_crates,
+    unused_import_braces,
+    unused_qualifications,
+    unused_results,
+    variant_size_differences
+)]
+// Disallow warnings when running tests.
+#![cfg_attr(test, deny(warnings))]
+// Disallow warnings in examples, we want to set a good example after all.
+#![doc(test(attr(deny(warnings))))]
+
 use std::io;
 use std::iter::FusedIterator;
 use std::num::NonZeroU8;
