@@ -1,0 +1,22 @@
+[package]
+name          = "mio-signals"
+description   = "Crate for handling signals with Mio."
+version       = "0.1.0"
+authors       = ["Thomas de Zeeuw <thomasdezeeuw@gmail.com>"]
+license       = "MIT"
+documentation = "https://docs.rs/mio-signals"
+repository    = "https://github.com/Thomasdezeeuw/mio-signals"
+readme        = "README.md"
+keywords      = ["signals", "mio"]
+include       = ["/Cargo.toml", "/src/**/*.rs", "/README.md", "/LICENSE"]
+edition       = "2018"
+
+[badges]
+travis-ci = { repository = "Thomasdezeeuw/mio-signals", branch = "master" }
+
+[dependencies]
+log = "0.4.6"
+mio = { git = "https://github.com/tokio-rs/mio" }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2.58"
