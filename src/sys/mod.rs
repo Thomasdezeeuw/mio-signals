@@ -2,11 +2,33 @@
 
 use crate::Signal;
 
-#[cfg(unix)]
-mod unix;
+#[cfg(any(
+    target_os = "bitrig",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+mod kqueue;
 
-#[cfg(unix)]
-pub use self::unix::Signals;
+#[cfg(any(
+    target_os = "bitrig",
+    target_os = "dragonfly",
+    target_os = "freebsd",
+    target_os = "ios",
+    target_os = "macos",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
+pub use self::kqueue::Signals;
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+mod signalfd;
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub use self::signalfd::Signals;
 
 // TODO: add Windows implementation.
 
