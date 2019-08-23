@@ -15,8 +15,6 @@ edition       = "2018"
 travis-ci = { repository = "Thomasdezeeuw/mio-signals", branch = "master" }
 
 [dependencies]
-log = "0.4.6"
-mio = { git = "https://github.com/tokio-rs/mio" }
-
-[target.'cfg(unix)'.dependencies]
 libc = "0.2.58"
+log  = "0.4.6"
+mio  = { git = "https://github.com/tokio-rs/mio" }
