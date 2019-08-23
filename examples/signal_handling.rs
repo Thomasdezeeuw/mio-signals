@@ -25,18 +25,20 @@ fn main() -> io::Result<()> {
         // Process each event.
         for event in events.iter() {
             match event.token() {
-                SIGNAL => {
+                // Because we're using edge triggers (default in Mio) we need to
+                // keep calling `receive` until it returns `Ok(None)`.
+                SIGNAL => loop {
                     // Receive the sent signal.
                     match signals.receive()? {
                         Some(Signal::Interrupt) => println!("Got interrupt signal"),
+                        Some(Signal::Quit) => println!("Got quit signal"),
                         Some(Signal::Terminate) => {
                             println!("Got terminate signal");
                             return Ok(());
                         }
-                        Some(Signal::Quit) => println!("Got quit signal"),
-                        _ => println!("Got unknown signal event: {:?}", event),
+                        None => break, // No more signals.
                     }
-                }
+                },
                 _ => println!("Got unknown event: {:?}", event),
             }
         }
