@@ -109,13 +109,7 @@ impl Signals {
     ///
     /// If no signal is available this returns `Ok(None)`.
     pub fn receive(&mut self) -> io::Result<Option<Signal>> {
-        self.sys.receive().or_else(|err| {
-            if let io::ErrorKind::WouldBlock = err.kind() {
-                Ok(None)
-            } else {
-                Err(err)
-            }
-        })
+        self.sys.receive()
     }
 }
 
