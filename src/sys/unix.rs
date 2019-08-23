@@ -171,7 +171,7 @@ mod kqueue {
                     flags: libc::EV_ADD,
                     fflags: 0,
                     data: 0,
-                    udata: ptr::null_mut(),
+                    udata: 0 as _,
                 });
                 n_changes += 1;
             }
@@ -181,7 +181,7 @@ mod kqueue {
                 libc::kevent(
                     kq.kq,
                     changes[0].as_ptr(),
-                    n_changes as libc::c_int,
+                    n_changes as _,
                     ptr::null_mut(),
                     0,
                     ptr::null(),
