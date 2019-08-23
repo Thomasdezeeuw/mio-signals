@@ -1,13 +1,10 @@
-use std::mem::MaybeUninit;
-use std::{io, ptr};
-
-use crate::{Signal, SignalSet};
+use crate::Signal;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 mod signalfd {
-    use std::io;
     use std::mem::{size_of, MaybeUninit};
     use std::os::unix::io::RawFd;
+    use std::{io, ptr};
 
     use log::error;
     use mio::unix::SourceFd;
@@ -15,7 +12,7 @@ mod signalfd {
 
     use crate::{Signal, SignalSet};
 
-    use super::{block_signals, create_sigset, from_raw_signal};
+    use super::{from_raw_signal, raw_signal};
 
     /// Signaler backed by `signalfd`.
     #[derive(Debug)]
@@ -68,6 +65,31 @@ mod signalfd {
                     _ => unreachable!("read an incorrect amount of bytes from signalfd"),
                 }
             }
+        }
+    }
+
+    /// Create a `libc::sigset_t` from `SignalSet`.
+    fn create_sigset(signals: SignalSet) -> io::Result<libc::sigset_t> {
+        let mut set: MaybeUninit<libc::sigset_t> = MaybeUninit::uninit();
+        if unsafe { libc::sigemptyset(set.as_mut_ptr()) } == -1 {
+            return Err(io::Error::last_os_error());
+        }
+        // This is safe because `sigemptyset` ensures `set` is initialised.
+        let mut set = unsafe { set.assume_init() };
+        for signal in signals {
+            if unsafe { libc::sigaddset(&mut set, raw_signal(signal)) } == -1 {
+                return Err(io::Error::last_os_error());
+            }
+        }
+        Ok(set)
+    }
+
+    /// Block all signals in `set`.
+    fn block_signals(set: libc::sigset_t) -> io::Result<()> {
+        if unsafe { libc::sigprocmask(libc::SIG_BLOCK, &set, ptr::null_mut()) } == -1 {
+            Err(io::Error::last_os_error())
+        } else {
+            Ok(())
         }
     }
 
@@ -133,7 +155,7 @@ mod kqueue {
 
     use crate::{Signal, SignalSet};
 
-    use super::{block_signals, create_sigset, from_raw_signal, raw_signal};
+    use super::{from_raw_signal, raw_signal};
 
     /// Signaler backed by kqueue (`EVFILT_SIGNAL`).
     ///
@@ -206,8 +228,7 @@ mod kqueue {
                 }
             }
 
-            // Block signals from interrupting the process.
-            create_sigset(signals).and_then(block_signals).map(|()| kq)
+            ignore_signals(signals).map(|()| kq)
         }
 
         pub fn receive(&mut self) -> io::Result<Option<Signal>> {
@@ -240,6 +261,45 @@ mod kqueue {
                 _ => unreachable!("unexpected number of events"),
             }
         }
+    }
+
+    /// Ignore all signals in the `signals` set.
+    fn ignore_signals(signals: SignalSet) -> io::Result<()> {
+        // Most OSes use `sigset_t` as mask, Darwin disagrees and uses an `int`.
+        let mask = {
+            #[cfg(any(
+                target_os = "bitrig",
+                target_os = "dragonfly",
+                target_os = "freebsd",
+                target_os = "netbsd",
+                target_os = "openbsd",
+            ))]
+            {
+                let mut set: MaybeUninit<libc::sigset_t> = MaybeUninit::uninit();
+                if unsafe { libc::sigemptyset(set.as_mut_ptr()) } == -1 {
+                    return Err(io::Error::last_os_error());
+                }
+                // This is safe because `sigemptyset` ensures `set` is initialised.
+                unsafe { set.assume_init() }
+            }
+            #[cfg(any(target_os = "ios", target_os = "macos"))]
+            {
+                0
+            }
+        };
+        let action = libc::sigaction {
+            sa_sigaction: libc::SIG_IGN,
+            sa_mask: mask,
+            sa_flags: 0,
+            #[cfg(any(target_os = "android", target_os = "linux"))]
+            sa_restorer: None,
+        };
+        for signal in signals {
+            if unsafe { libc::sigaction(raw_signal(signal), &action, ptr::null_mut()) } == -1 {
+                return Err(io::Error::last_os_error());
+            }
+        }
+        Ok(())
     }
 
     impl event::Source for Signals {
@@ -307,31 +367,6 @@ fn from_raw_signal(raw_signal: libc::c_int) -> Option<Signal> {
         libc::SIGQUIT => Some(Signal::Quit),
         libc::SIGTERM => Some(Signal::Terminate),
         _ => None,
-    }
-}
-
-/// Create a `libc::sigset_t` from `SignalSet`.
-fn create_sigset(signals: SignalSet) -> io::Result<libc::sigset_t> {
-    let mut set: MaybeUninit<libc::sigset_t> = MaybeUninit::uninit();
-    if unsafe { libc::sigemptyset(set.as_mut_ptr()) } == -1 {
-        return Err(io::Error::last_os_error());
-    }
-    // This is safe because `sigemptyset` ensures `set` is initialised.
-    let mut set = unsafe { set.assume_init() };
-    for signal in signals {
-        if unsafe { libc::sigaddset(&mut set, raw_signal(signal)) } == -1 {
-            return Err(io::Error::last_os_error());
-        }
-    }
-    Ok(set)
-}
-
-/// Block all signals in `set`.
-fn block_signals(set: libc::sigset_t) -> io::Result<()> {
-    if unsafe { libc::sigprocmask(libc::SIG_BLOCK, &set, ptr::null_mut()) } == -1 {
-        Err(io::Error::last_os_error())
-    } else {
-        Ok(())
     }
 }
 
