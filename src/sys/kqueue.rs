@@ -10,78 +10,29 @@ use crate::{Signal, SignalSet};
 
 use super::{from_raw_signal, raw_signal};
 
-/// Signaler backed by kqueue (`EVFILT_SIGNAL`).
+/// Signaler backed that uses `kqueue(2)`'s `EVFILT_SIGNAL`.
 ///
-/// We crate a new kqueue which we register with the kqueue in `Poll`, so we
-/// can received signals by calling `receive` instead of returning them when
-/// calling `Poll::poll` to match the API provided by `signalfd`.
+/// # Implementation notes
+///
+/// We crate a new `kqueue` which we register with the `kqueue` in `Poll`, so we
+/// can received signals by calling `receive` instead of returning them as
+/// `Event`s when calling `Poll::poll` to match the API provided by the
+/// `signalfd` implementation.
+///
+/// We set the signal handler to ignore the signal (not blocking them like in
+/// the signalfd implementation) to ensure the signal doesn't grow endlessly.
 #[derive(Debug)]
 pub struct Signals {
-    // Separate from the associated kqueue in `Poll`.
+    /// `kqueue(2)` file descriptor.
     kq: RawFd,
 }
 
 impl Signals {
     pub fn new(signals: SignalSet) -> io::Result<Signals> {
-        // Create our own kqueue.
-        let kq = unsafe { libc::kqueue() };
-        let kq = if kq == -1 {
-            Err(io::Error::last_os_error())
-        } else {
-            Ok(Signals { kq })
-        }?;
-
-        // For each signal create an kevent to indicate we want events for
-        // those signals.
-        let mut changes: [MaybeUninit<libc::kevent>; SignalSet::all().len()] = [
-            MaybeUninit::uninit(),
-            MaybeUninit::uninit(),
-            MaybeUninit::uninit(),
-        ];
-        let mut n_changes = 0;
-        for signal in signals {
-            changes[n_changes] = MaybeUninit::new(libc::kevent {
-                ident: raw_signal(signal) as libc::uintptr_t,
-                filter: libc::EVFILT_SIGNAL,
-                flags: libc::EV_ADD,
-                fflags: 0,
-                data: 0,
-                udata: 0 as _,
-            });
-            n_changes += 1;
-        }
-
-        // Register the event signals with our kqueue.
-        let ok = unsafe {
-            libc::kevent(
-                kq.kq,
-                changes[0].as_ptr(),
-                n_changes as _,
-                ptr::null_mut(),
-                0,
-                ptr::null(),
-            )
-        };
-        if ok == -1 {
-            // EINTR is the only error that we can handle, but according to
-            // the man page of FreeBSD: "When kevent() call fails with EINTR
-            // error, all changes in the changelist have been applied", so
-            // we're done.
-            //
-            // EOPNOTSUPP (NetBSD only),
-            // EACCESS, EFAULT, ENOMEM: can't handle.
-            //
-            // EBADF, EINVAL,
-            // ENOENT, and ESRCH: all have to do with invalid arguments,
-            //                    which shouldn't happen.
-            let err = io::Error::last_os_error();
-            match err.raw_os_error() {
-                Some(libc::EINTR) => (),
-                _ => return Err(err),
-            }
-        }
-
-        ignore_signals(signals).map(|()| kq)
+        new_kqueue()
+            .map(|kq| Signals { kq })
+            .and_then(|kq| register_signals(kq.kq, signals).map(|()| kq))
+            .and_then(|kq| ignore_signals(signals).map(|()| kq))
     }
 
     pub fn receive(&mut self) -> io::Result<Option<Signal>> {
@@ -101,18 +52,77 @@ impl Signals {
                 // This is safe because `kevent` ensures that the event is
                 // initialised.
                 let kevent = unsafe { kevent.assume_init() };
-                if kevent.filter == libc::EVFILT_SIGNAL {
-                    // This should never return `None` as we control the
-                    // signals we register for, which are defined in terms
-                    // of `Signal`.
-                    Ok(from_raw_signal(kevent.ident as libc::c_int))
-                } else {
-                    // Should never happen, but just in case.
-                    Ok(None)
-                }
+                // Should never happen, but just in case.
+                let filter = kevent.filter; // Can't create ref to packed struct.
+                debug_assert_eq!(filter, libc::EVFILT_SIGNAL);
+                // This should never return `None` as we control the signals we
+                // register for, which is always defined in terms of `Signal`.
+                Ok(from_raw_signal(kevent.ident as libc::c_int))
             }
             _ => unreachable!("unexpected number of events"),
         }
+    }
+}
+
+fn new_kqueue() -> io::Result<RawFd> {
+    let kq = unsafe { libc::kqueue() };
+    if kq == -1 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(kq)
+    }
+}
+
+fn register_signals(kq: RawFd, signals: SignalSet) -> io::Result<()> {
+    // For each signal create an kevent to indicate we want events for
+    // those signals.
+    let mut changes: [MaybeUninit<libc::kevent>; SignalSet::all().len()] = [
+        MaybeUninit::uninit(),
+        MaybeUninit::uninit(),
+        MaybeUninit::uninit(),
+    ];
+    let mut n_changes = 0;
+    for signal in signals {
+        changes[n_changes] = MaybeUninit::new(libc::kevent {
+            ident: raw_signal(signal) as libc::uintptr_t,
+            filter: libc::EVFILT_SIGNAL,
+            flags: libc::EV_ADD,
+            fflags: 0,
+            data: 0,
+            udata: 0 as _,
+        });
+        n_changes += 1;
+    }
+
+    let ok = unsafe {
+        libc::kevent(
+            kq,
+            changes[0].as_ptr(),
+            n_changes as _,
+            ptr::null_mut(),
+            0,
+            ptr::null(),
+        )
+    };
+    if ok == -1 {
+        // EINTR is the only error that we can handle, but according to
+        // the man page of FreeBSD: "When kevent() call fails with EINTR
+        // error, all changes in the changelist have been applied", so
+        // we're done.
+        //
+        // EOPNOTSUPP (NetBSD only),
+        // EACCESS, EFAULT, ENOMEM: can't handle.
+        //
+        // EBADF, EINVAL,
+        // ENOENT, and ESRCH: all have to do with invalid arguments,
+        //                    which shouldn't happen.
+        let err = io::Error::last_os_error();
+        match err.raw_os_error() {
+            Some(libc::EINTR) => Ok(()),
+            _ => Err(err),
+        }
+    } else {
+        Ok(())
     }
 }
 
@@ -156,12 +166,7 @@ fn ignore_signals(signals: SignalSet) -> io::Result<()> {
 }
 
 impl event::Source for Signals {
-    fn register(
-        &self,
-        registry: &Registry,
-        token: Token,
-        interests: Interests,
-    ) -> io::Result<()> {
+    fn register(&self, registry: &Registry, token: Token, interests: Interests) -> io::Result<()> {
         SourceFd(&self.kq).register(registry, token, interests)
     }
 
