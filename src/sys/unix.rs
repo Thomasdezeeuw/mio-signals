@@ -1,4 +1,5 @@
-use std::{io, mem, ptr};
+use std::mem::MaybeUninit;
+use std::{io, ptr};
 
 use crate::{Signal, SignalSet};
 
@@ -311,11 +312,12 @@ fn from_raw_signal(raw_signal: libc::c_int) -> Option<Signal> {
 
 /// Create a `libc::sigset_t` from `SignalSet`.
 fn create_sigset(signals: SignalSet) -> io::Result<libc::sigset_t> {
-    // FIXME: don't use mem::uninitialized.
-    let mut set: libc::sigset_t = unsafe { mem::uninitialized() };
-    if unsafe { libc::sigemptyset(&mut set) } == -1 {
+    let mut set: MaybeUninit<libc::sigset_t> = MaybeUninit::uninit();
+    if unsafe { libc::sigemptyset(set.as_mut_ptr()) } == -1 {
         return Err(io::Error::last_os_error());
     }
+    // This is safe because `sigemptyset` ensures `set` is initialised.
+    let mut set = unsafe { set.assume_init() };
     for signal in signals {
         if unsafe { libc::sigaddset(&mut set, raw_signal(signal)) } == -1 {
             return Err(io::Error::last_os_error());
