@@ -248,7 +248,6 @@ mod kqueue {
             token: Token,
             interests: Interests,
         ) -> io::Result<()> {
-            // FIXME: needs level triggers!
             SourceFd(&self.kq).register(registry, token, interests)
         }
 

@@ -138,11 +138,7 @@ fn example() {
     let pid = child.id() as libc::pid_t;
 
     send_signal(pid, libc::SIGINT);
-    // FIXME: give the example some time to handle the signal, required because
-    // of edge triggers.
-    sleep(Duration::from_millis(1));
     send_signal(pid, libc::SIGQUIT);
-    sleep(Duration::from_millis(1));
     send_signal(pid, libc::SIGTERM);
 
     let output = read_output(child);

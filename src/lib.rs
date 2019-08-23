@@ -79,12 +79,15 @@ mod sys;
 ///
 ///         for event in events.iter() {
 ///             match event.token() {
-///                 // Received a sent signal.
-///                 SIGNAL => match signals.receive()? {
-///                     Some(Signal::Interrupt) => println!("Got interrupt signal"),
-///                     Some(Signal::Terminate) => println!("Got terminate signal"),
-///                     Some(Signal::Quit) => println!("Got quit signal"),
-///                     _ => println!("Got unknown signal event: {:?}", event),
+///                 // Because we're using edge triggers (default in Mio) we need
+///                 // to keep calling `receive` until it returns `Ok(None)`.
+///                 SIGNAL => loop {
+///                     match signals.receive()? {
+///                         Some(Signal::Interrupt) => println!("Got interrupt signal"),
+///                         Some(Signal::Terminate) => println!("Got terminate signal"),
+///                         Some(Signal::Quit) => println!("Got quit signal"),
+///                         None => break,
+///                     }
 ///                 },
 /// #               Token(20) => return Ok(()),
 ///                 _ => println!("Got unexpected event: {:?}", event),
@@ -105,8 +108,16 @@ impl Signals {
     }
 
     /// Receive a signal, if any.
+    ///
+    /// If no signal is available this returns `Ok(None)`.
     pub fn receive(&mut self) -> io::Result<Option<Signal>> {
-        self.sys.receive()
+        self.sys.receive().or_else(|err| {
+            if let io::ErrorKind::WouldBlock = err.kind() {
+                Ok(None)
+            } else {
+                Err(err)
+            }
+        })
     }
 }
 
