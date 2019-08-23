@@ -1,4 +1,4 @@
-//! Module for handling signals with Mio.
+//! Crate for handling signals with Mio.
 //!
 //! See the [`Signals`] documentation.
 
@@ -30,7 +30,7 @@ use mio::{event, Interests, Registry, Token};
 
 mod sys;
 
-/// Notifications of process signals.
+/// Notification of process signals.
 ///
 /// # Notes
 ///
