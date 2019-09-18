@@ -154,8 +154,6 @@ fn ignore_signals(signals: SignalSet) -> io::Result<()> {
         sa_sigaction: libc::SIG_IGN,
         sa_mask: mask,
         sa_flags: 0,
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        sa_restorer: None,
     };
     for signal in signals {
         if unsafe { libc::sigaction(raw_signal(signal), &action, ptr::null_mut()) } == -1 {
