@@ -131,7 +131,6 @@ fn ignore_signals(signals: SignalSet) -> io::Result<()> {
     // Most OSes use `sigset_t` as mask, Darwin disagrees and uses an `int`.
     let mask = {
         #[cfg(any(
-            target_os = "bitrig",
             target_os = "dragonfly",
             target_os = "freebsd",
             target_os = "netbsd",

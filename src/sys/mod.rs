@@ -3,7 +3,6 @@
 use crate::Signal;
 
 #[cfg(any(
-    target_os = "bitrig",
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "ios",
@@ -14,7 +13,6 @@ use crate::Signal;
 mod kqueue;
 
 #[cfg(any(
-    target_os = "bitrig",
     target_os = "dragonfly",
     target_os = "freebsd",
     target_os = "ios",
