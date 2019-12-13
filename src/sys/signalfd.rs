@@ -4,7 +4,7 @@ use std::{io, ptr};
 
 use log::error;
 use mio::unix::SourceFd;
-use mio::{event, Interests, Registry, Token};
+use mio::{event, Interest, Registry, Token};
 
 use crate::{Signal, SignalSet};
 
@@ -102,20 +102,25 @@ fn block_signals(set: libc::sigset_t) -> io::Result<()> {
 }
 
 impl event::Source for Signals {
-    fn register(&self, registry: &Registry, token: Token, interests: Interests) -> io::Result<()> {
+    fn register(
+        &mut self,
+        registry: &Registry,
+        token: Token,
+        interests: Interest,
+    ) -> io::Result<()> {
         SourceFd(&self.fd).register(registry, token, interests)
     }
 
     fn reregister(
-        &self,
+        &mut self,
         registry: &Registry,
         token: Token,
-        interests: Interests,
+        interests: Interest,
     ) -> io::Result<()> {
         SourceFd(&self.fd).reregister(registry, token, interests)
     }
 
-    fn deregister(&self, registry: &Registry) -> io::Result<()> {
+    fn deregister(&mut self, registry: &Registry) -> io::Result<()> {
         SourceFd(&self.fd).deregister(registry)
     }
 }

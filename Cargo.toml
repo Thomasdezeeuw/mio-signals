@@ -17,4 +17,13 @@ travis-ci = { repository = "Thomasdezeeuw/mio-signals", branch = "master" }
 [dependencies]
 libc = "0.2.58"
 log  = "0.4.6"
-mio  = { git = "https://github.com/tokio-rs/mio" }
+
+[target.'cfg(unix)'.dependencies.mio]
+git = "https://github.com/tokio-rs/mio"
+# Need `SourceFd`.
+features = ["os-util"]
+
+[dev-dependencies.mio]
+git = "https://github.com/tokio-rs/mio"
+# Need `Poll`.
+features = ["os-poll"]
