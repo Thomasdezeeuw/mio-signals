@@ -1,6 +1,6 @@
 use std::io;
 
-use mio::{Events, Interests, Poll, Token};
+use mio::{Events, Interest, Poll, Token};
 use mio_signals::{Signal, SignalSet, Signals};
 
 const SIGNAL: Token = Token(10);
@@ -13,7 +13,7 @@ fn main() -> io::Result<()> {
     // Create the `Signals` instance and register all possible signals.
     let mut signals = Signals::new(SignalSet::all())?;
     poll.registry()
-        .register(&signals, SIGNAL, Interests::READABLE)?;
+        .register(&mut signals, SIGNAL, Interest::READABLE)?;
 
     loop {
         // Poll for events.

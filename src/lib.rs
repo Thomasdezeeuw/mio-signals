@@ -26,7 +26,7 @@ use std::iter::FusedIterator;
 use std::num::NonZeroU8;
 use std::ops::BitOr;
 
-use mio::{event, Interests, Registry, Token};
+use mio::{event, Interest, Registry, Token};
 
 mod sys;
 
@@ -54,7 +54,7 @@ mod sys;
 /// ```
 /// use std::io;
 ///
-/// use mio::{Poll, Events, Interests, Token};
+/// use mio::{Poll, Events, Interest, Token};
 /// use mio_signals::{Signals, Signal, SignalSet};
 ///
 /// const SIGNAL: Token = Token(10);
@@ -66,7 +66,7 @@ mod sys;
 ///     // Create a `Signals` instance that will catch signals for us.
 ///     let mut signals = Signals::new(SignalSet::all())?;
 ///     // And register it with our `Poll` instance.
-///     poll.registry().register(&signals, SIGNAL, Interests::READABLE)?;
+///     poll.registry().register(&mut signals, SIGNAL, Interest::READABLE)?;
 ///
 ///     # // Don't want to let the example run for ever.
 ///     # let awakener = mio::Waker::new(&poll.registry(), Token(20))?;
@@ -114,20 +114,25 @@ impl Signals {
 }
 
 impl event::Source for Signals {
-    fn register(&self, registry: &Registry, token: Token, interests: Interests) -> io::Result<()> {
+    fn register(
+        &mut self,
+        registry: &Registry,
+        token: Token,
+        interests: Interest,
+    ) -> io::Result<()> {
         self.sys.register(registry, token, interests)
     }
 
     fn reregister(
-        &self,
+        &mut self,
         registry: &Registry,
         token: Token,
-        interests: Interests,
+        interests: Interest,
     ) -> io::Result<()> {
         self.sys.reregister(registry, token, interests)
     }
 
-    fn deregister(&self, registry: &Registry) -> io::Result<()> {
+    fn deregister(&mut self, registry: &Registry) -> io::Result<()> {
         self.sys.deregister(registry)
     }
 }

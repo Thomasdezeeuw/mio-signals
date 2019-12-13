@@ -4,7 +4,7 @@ use std::{io, ptr};
 
 use log::error;
 use mio::unix::SourceFd;
-use mio::{event, Interests, Registry, Token};
+use mio::{event, Interest, Registry, Token};
 
 use crate::{Signal, SignalSet};
 
@@ -164,20 +164,25 @@ fn ignore_signals(signals: SignalSet) -> io::Result<()> {
 }
 
 impl event::Source for Signals {
-    fn register(&self, registry: &Registry, token: Token, interests: Interests) -> io::Result<()> {
+    fn register(
+        &mut self,
+        registry: &Registry,
+        token: Token,
+        interests: Interest,
+    ) -> io::Result<()> {
         SourceFd(&self.kq).register(registry, token, interests)
     }
 
     fn reregister(
-        &self,
+        &mut self,
         registry: &Registry,
         token: Token,
-        interests: Interests,
+        interests: Interest,
     ) -> io::Result<()> {
         SourceFd(&self.kq).reregister(registry, token, interests)
     }
 
-    fn deregister(&self, registry: &Registry) -> io::Result<()> {
+    fn deregister(&mut self, registry: &Registry) -> io::Result<()> {
         SourceFd(&self.kq).deregister(registry)
     }
 }
