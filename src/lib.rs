@@ -156,6 +156,7 @@ impl event::Source for Signals {
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct SignalSet(NonZeroU8);
 
+// NOTE: these may never be zero.
 const INTERRUPT: u8 = 1;
 const QUIT: u8 = 1 << 1;
 const TERMINATE: u8 = 1 << 2;

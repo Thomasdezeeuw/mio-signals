@@ -14,7 +14,7 @@ use super::{from_raw_signal, raw_signal};
 ///
 /// # Implementation notes
 ///
-/// We create a `signalfd` which we register with the `epoll` in `Poll`. This
+/// We create a `signalfd` which we register with the `epoll(2)` in `Poll`. This
 /// will have a reference to the signal queue from which we can read (using
 /// `read(2)`). However the regular signal handler is still invoked, to prevent
 /// this we block signals (see `block_signals`). This is fine because reading
