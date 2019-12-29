@@ -1,6 +1,6 @@
 # Mio signals
 
-[![Build Status](https://travis-ci.org/Thomasdezeeuw/mio-signals.svg?branch=master)](https://travis-ci.org/Thomasdezeeuw/mio-signals)
+[![Build Status](https://travis-ci.com/Thomasdezeeuw/mio-signals.svg?branch=master)](https://travis-ci.com/Thomasdezeeuw/mio-signals)
 [![Build status](https://api.cirrus-ci.com/github/Thomasdezeeuw/mio-signals.svg)](https://cirrus-ci.com/github/Thomasdezeeuw/mio-signals)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Crates.io](https://img.shields.io/crates/v/mio-signals.svg)](https://crates.io/crates/mio-signals)
