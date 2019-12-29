@@ -34,6 +34,8 @@
 #![cfg_attr(test, deny(warnings))]
 // Disallow warnings in examples, we want to set a good example after all.
 #![doc(test(attr(deny(warnings))))]
+// `SignalSet` can never be empty, thus an `is_empty` method doesn't make sense.
+#![allow(clippy::len_without_is_empty)]
 
 use std::io;
 use std::iter::FusedIterator;
