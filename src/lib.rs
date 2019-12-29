@@ -1,6 +1,24 @@
 //! Crate for handling signals with Mio.
 //!
 //! See the [`Signals`] documentation.
+//!
+//! ## Supported platforms
+//!
+//! Currently supported platforms:
+//!
+//! * Android
+//! * DragonFly BSD
+//! * FreeBSD
+//! * Linux
+//! * NetBSD
+//! * OpenBSD
+//! * iOS
+//! * macOS
+//!
+//! The most notable exception in the list is Windows. If you want to contribute
+//! a port to Windows please see [issue #4].
+//!
+//! [issue #4]: https://github.com/Thomasdezeeuw/mio-signals/issues/4
 
 // TODO: #[non_exhaustive] to `Signal`.
 
