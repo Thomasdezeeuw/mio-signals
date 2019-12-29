@@ -38,6 +38,7 @@ fn raw_signal(signal: Signal) -> libc::c_int {
         Signal::Terminate => libc::SIGTERM,
     }
 }
+
 /// Convert a raw Unix signal into a signal.
 fn from_raw_signal(raw_signal: libc::c_int) -> Option<Signal> {
     match raw_signal {
@@ -48,42 +49,35 @@ fn from_raw_signal(raw_signal: libc::c_int) -> Option<Signal> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::Signal;
+#[test]
+fn test_from_raw_signal() {
+    assert_eq!(from_raw_signal(libc::SIGINT), Some(Signal::Interrupt));
+    assert_eq!(from_raw_signal(libc::SIGQUIT), Some(Signal::Quit));
+    assert_eq!(from_raw_signal(libc::SIGTERM), Some(Signal::Terminate));
 
-    use super::{from_raw_signal, raw_signal};
+    // Unsupported signals.
+    assert_eq!(from_raw_signal(libc::SIGSTOP), None);
+}
 
-    #[test]
-    fn test_from_raw_signal() {
-        assert_eq!(from_raw_signal(libc::SIGINT), Some(Signal::Interrupt));
-        assert_eq!(from_raw_signal(libc::SIGQUIT), Some(Signal::Quit));
-        assert_eq!(from_raw_signal(libc::SIGTERM), Some(Signal::Terminate));
+#[test]
+fn test_raw_signal() {
+    assert_eq!(raw_signal(Signal::Interrupt), libc::SIGINT);
+    assert_eq!(raw_signal(Signal::Quit), libc::SIGQUIT);
+    assert_eq!(raw_signal(Signal::Terminate), libc::SIGTERM);
+}
 
-        // Unsupported signals.
-        assert_eq!(from_raw_signal(libc::SIGSTOP), None);
-    }
-
-    #[test]
-    fn test_raw_signal() {
-        assert_eq!(raw_signal(Signal::Interrupt), libc::SIGINT);
-        assert_eq!(raw_signal(Signal::Quit), libc::SIGQUIT);
-        assert_eq!(raw_signal(Signal::Terminate), libc::SIGTERM);
-    }
-
-    #[test]
-    fn raw_signal_round_trip() {
-        assert_eq!(
-            raw_signal(from_raw_signal(libc::SIGINT).unwrap()),
-            libc::SIGINT
-        );
-        assert_eq!(
-            raw_signal(from_raw_signal(libc::SIGQUIT).unwrap()),
-            libc::SIGQUIT
-        );
-        assert_eq!(
-            raw_signal(from_raw_signal(libc::SIGTERM).unwrap()),
-            libc::SIGTERM
-        );
-    }
+#[test]
+fn raw_signal_round_trip() {
+    assert_eq!(
+        raw_signal(from_raw_signal(libc::SIGINT).unwrap()),
+        libc::SIGINT
+    );
+    assert_eq!(
+        raw_signal(from_raw_signal(libc::SIGQUIT).unwrap()),
+        libc::SIGQUIT
+    );
+    assert_eq!(
+        raw_signal(from_raw_signal(libc::SIGTERM).unwrap()),
+        libc::SIGTERM
+    );
 }
