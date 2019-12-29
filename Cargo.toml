@@ -15,15 +15,11 @@ edition       = "2018"
 travis-ci = { repository = "Thomasdezeeuw/mio-signals", branch = "master" }
 
 [dependencies]
-libc = "0.2.58"
-log  = "0.4.6"
+libc = "0.2.62"
+log  = "0.4.8"
+# Need `SourceFd` from `os-util`.
+mio  = { version = "0.7.0-alpha.1", features = ["os-util"] }
 
-[target.'cfg(unix)'.dependencies.mio]
-git = "https://github.com/tokio-rs/mio"
-# Need `SourceFd`.
-features = ["os-util"]
-
-[dev-dependencies.mio]
-git = "https://github.com/tokio-rs/mio"
-# Need `Poll`.
-features = ["os-poll"]
+[dev-dependencies]
+# Need `Poll` from `os-poll`.
+mio = { version = "0.7.0-alpha.1", features = ["os-poll"] }
