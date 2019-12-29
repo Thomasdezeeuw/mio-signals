@@ -48,20 +48,27 @@ mod sys;
 ///
 /// # Notes
 ///
-/// This will block all signals in the signal set given when creating `Signals`,
-/// using [`sigprocmask(2)`]. This means that the program is not interrupt, or
-/// in any way notified of signal until the assiocated [`Poll`] is [polled].
+/// On Android and Linux this will block all signals in the signal set given
+/// when creating `Signals`, using [`sigprocmask(2)`]. This means that the
+/// program is not interrupted, or in any way notified of signal until the
+/// assiocated [`Poll`] is [polled].
+///
+/// On platforms that support [`kqueue(2)`] the signal handler action is set to
+/// `SIG_IGN` using [`sigaction(2)`], meaning that all signals will be ignored.
+/// Same as on Linux based systems; the program is not interrupted, or in any way
+/// notified of signal until the assiocated [`Poll`] is [polled].
 ///
 /// [`sigprocmask(2)`]: http://man7.org/linux/man-pages/man2/sigprocmask.2.html
 /// [`Poll`]: mio::Poll
 /// [polled]: mio::Poll::poll
+/// [`kqueue(2)`]: https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
+/// [`sigaction(2)`]: https://www.freebsd.org/cgi/man.cgi?query=sigaction&sektion=2
 ///
 /// # Implementation notes
 ///
 /// On platforms that support [`kqueue(2)`] this will use the `EVFILT_SIGNAL`
-/// event filter. On Linux it uses [`signalfd(2)`].
+/// event filter. On Android and Linux it uses [`signalfd(2)`].
 ///
-/// [`kqueue(2)`]: https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 /// [`signalfd(2)`]: http://man7.org/linux/man-pages/man2/signalfd.2.html
 ///
 /// # Examples
