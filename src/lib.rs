@@ -23,13 +23,9 @@
 // TODO: #[non_exhaustive] to `Signal`.
 
 #![warn(
-    anonymous_parameters,
-    bare_trait_objects,
     missing_debug_implementations,
     missing_docs,
     rust_2018_idioms,
-    unused_extern_crates,
-    unused_import_braces,
     unused_qualifications,
     unused_results,
     variant_size_differences
