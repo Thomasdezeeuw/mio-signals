@@ -1,6 +1,6 @@
 use std::mem::{size_of, MaybeUninit};
 use std::os::unix::io::RawFd;
-use std::{io, ptr};
+use std::{fmt, io, ptr};
 
 use log::error;
 use mio::unix::SourceFd;
@@ -24,17 +24,19 @@ use super::{from_raw_signal, raw_signal};
 /// We can't ignore the signal using `SIG_IGN`, like we do in the kqueue
 /// implementation, because then the signals don't end up in our `signalfd`
 /// either.
-#[derive(Debug)]
 pub struct Signals {
     /// `signalfd(2)` file descriptor.
     fd: RawFd,
+    /// All signals this is listening for, used in resetting the signal handlers.
+    signals: libc::sigset_t,
 }
 
 impl Signals {
     pub fn new(signals: SignalSet) -> io::Result<Signals> {
         create_sigset(signals)
-            .and_then(|set| new_signalfd(&set).map(|fd| (Signals { fd }, set)))
-            .and_then(|(fd, set)| block_signals(set).map(|()| fd))
+            .and_then(|set| new_signalfd(&set).map(|fd| (fd, set)))
+            .map(|(fd, set)| (Signals { fd, signals: set }, set))
+            .and_then(|(fd, set)| block_signals(&set).map(|()| fd))
     }
 
     pub fn receive(&mut self) -> io::Result<Option<Signal>> {
@@ -93,8 +95,17 @@ fn new_signalfd(set: &libc::sigset_t) -> io::Result<RawFd> {
 }
 
 /// Block all signals in `set`.
-fn block_signals(set: libc::sigset_t) -> io::Result<()> {
-    if unsafe { libc::sigprocmask(libc::SIG_BLOCK, &set, ptr::null_mut()) } == -1 {
+fn block_signals(set: &libc::sigset_t) -> io::Result<()> {
+    sigprocmask(libc::SIG_BLOCK, set)
+}
+
+/// Inverse of `block_signals`, unblock all signals in `set`.
+fn unblock_signals(set: &libc::sigset_t) -> io::Result<()> {
+    sigprocmask(libc::SIG_UNBLOCK, set)
+}
+
+fn sigprocmask(how: libc::c_int, set: &libc::sigset_t) -> io::Result<()> {
+    if unsafe { libc::sigprocmask(how, set, ptr::null_mut()) } == -1 {
         Err(io::Error::last_os_error())
     } else {
         Ok(())
@@ -125,8 +136,19 @@ impl event::Source for Signals {
     }
 }
 
+impl fmt::Debug for Signals {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Signals").field("fd", &self.fd).finish()
+    }
+}
+
 impl Drop for Signals {
     fn drop(&mut self) {
+        // Reverse the blocking of signals.
+        if let Err(err) = unblock_signals(&self.signals) {
+            error!("error unblocking signals: {}", err);
+        }
+
         if unsafe { libc::close(self.fd) } == -1 {
             // Possible errors:
             // - EBADF, EIO: can't recover.

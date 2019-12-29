@@ -25,12 +25,14 @@ use super::{from_raw_signal, raw_signal};
 pub struct Signals {
     /// `kqueue(2)` file descriptor.
     kq: RawFd,
+    /// All signals this is listening for, used in resetting the signal handlers.
+    signals: SignalSet,
 }
 
 impl Signals {
     pub fn new(signals: SignalSet) -> io::Result<Signals> {
         new_kqueue()
-            .map(|kq| Signals { kq })
+            .map(|kq| Signals { kq, signals })
             .and_then(|kq| register_signals(kq.kq, signals).map(|()| kq))
             .and_then(|kq| ignore_signals(signals).map(|()| kq))
     }
@@ -128,30 +130,20 @@ fn register_signals(kq: RawFd, signals: SignalSet) -> io::Result<()> {
 
 /// Ignore all signals in the `signals` set.
 fn ignore_signals(signals: SignalSet) -> io::Result<()> {
-    // Most OSes use `sigset_t` as mask, Darwin disagrees and uses an `int`.
-    let mask = {
-        #[cfg(any(
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "netbsd",
-            target_os = "openbsd",
-        ))]
-        {
-            let mut set: MaybeUninit<libc::sigset_t> = MaybeUninit::uninit();
-            if unsafe { libc::sigemptyset(set.as_mut_ptr()) } == -1 {
-                return Err(io::Error::last_os_error());
-            }
-            // This is safe because `sigemptyset` ensures `set` is initialised.
-            unsafe { set.assume_init() }
-        }
-        #[cfg(any(target_os = "ios", target_os = "macos"))]
-        {
-            0
-        }
-    };
+    sigaction(signals, libc::SIG_IGN)
+}
+
+/// Inverse of `ignore_signals`, resetting all signal handlers to the default.
+fn unignore_signals(signals: SignalSet) -> io::Result<()> {
+    sigaction(signals, libc::SIG_DFL)
+}
+
+/// Call `sigaction` for each signal in `signals`, using `action` as signal
+/// handler.
+fn sigaction(signals: SignalSet, action: libc::sighandler_t) -> io::Result<()> {
     let action = libc::sigaction {
-        sa_sigaction: libc::SIG_IGN,
-        sa_mask: mask,
+        sa_sigaction: action,
+        sa_mask: empty_sigset()?,
         sa_flags: 0,
     };
     for signal in signals {
@@ -160,6 +152,17 @@ fn ignore_signals(signals: SignalSet) -> io::Result<()> {
         }
     }
     Ok(())
+}
+
+/// Create an empty `sigset_t`.
+fn empty_sigset() -> io::Result<libc::sigset_t> {
+    let mut set: MaybeUninit<libc::sigset_t> = MaybeUninit::uninit();
+    if unsafe { libc::sigemptyset(set.as_mut_ptr()) } == -1 {
+        Err(io::Error::last_os_error())
+    } else {
+        // This is safe because `sigemptyset` ensures `set` is initialised.
+        Ok(unsafe { set.assume_init() })
+    }
 }
 
 impl event::Source for Signals {
@@ -188,6 +191,11 @@ impl event::Source for Signals {
 
 impl Drop for Signals {
     fn drop(&mut self) {
+        // Reverse the ignoring of signals.
+        if let Err(err) = unignore_signals(self.signals) {
+            error!("error resetting signal action: {}", err);
+        }
+
         if unsafe { libc::close(self.kq) } == -1 {
             // Possible errors:
             // - EBADF, EIO: can't recover.
