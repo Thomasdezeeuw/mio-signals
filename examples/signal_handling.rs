@@ -17,7 +17,12 @@ fn main() -> io::Result<()> {
 
     loop {
         // Poll for events.
-        poll.poll(&mut events, None)?;
+        match poll.poll(&mut events, None) {
+            Ok(()) => {}
+            // Polling can be interrupted.
+            Err(ref err) if err.kind() == io::ErrorKind::Interrupted => continue,
+            Err(err) => return Err(err),
+        }
 
         // Now send the process a signal, e.g. by pressing `CTL+C` in a shell,
         // or calling `kill` on it.
@@ -29,7 +34,7 @@ fn main() -> io::Result<()> {
                 // keep calling `receive` until it returns `Ok(None)`.
                 SIGNAL => loop {
                     // Receive the sent signal.
-                    match signals.receive()? {
+                    match signals.receive().unwrap() {
                         Some(Signal::Interrupt) => println!("Got interrupt signal"),
                         Some(Signal::Quit) => println!("Got quit signal"),
                         Some(Signal::Terminate) => {

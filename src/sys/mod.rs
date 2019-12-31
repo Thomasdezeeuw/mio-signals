@@ -2,6 +2,7 @@
 
 use crate::Signal;
 
+/*
 #[cfg(any(
     target_os = "dragonfly",
     target_os = "freebsd",
@@ -27,10 +28,18 @@ mod signalfd;
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::signalfd::Signals;
+*/
 
-// TODO: add Windows implementation.
+//#[cfg(windows)]
+#[cfg(target_os = "macos")]
+mod pipe;
+
+//#[cfg(windows)]
+#[cfg(target_os = "macos")]
+pub use self::pipe::Signals;
 
 /// Convert a `signal` into a Unix signal.
+#[cfg(unix)]
 fn raw_signal(signal: Signal) -> libc::c_int {
     match signal {
         Signal::Interrupt => libc::SIGINT,
@@ -43,6 +52,7 @@ fn raw_signal(signal: Signal) -> libc::c_int {
 fn from_raw_signal(raw_signal: libc::c_int) -> Option<Signal> {
     match raw_signal {
         libc::SIGINT => Some(Signal::Interrupt),
+        #[cfg(unix)] // Not supported on Windows.
         libc::SIGQUIT => Some(Signal::Quit),
         libc::SIGTERM => Some(Signal::Terminate),
         _ => None,
@@ -60,6 +70,7 @@ fn test_from_raw_signal() {
 }
 
 #[test]
+#[cfg(unix)]
 fn test_raw_signal() {
     assert_eq!(raw_signal(Signal::Interrupt), libc::SIGINT);
     assert_eq!(raw_signal(Signal::Quit), libc::SIGQUIT);
@@ -67,6 +78,7 @@ fn test_raw_signal() {
 }
 
 #[test]
+#[cfg(unix)]
 fn raw_signal_round_trip() {
     assert_eq!(
         raw_signal(from_raw_signal(libc::SIGINT).unwrap()),

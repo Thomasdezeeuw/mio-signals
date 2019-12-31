@@ -1,0 +1,8 @@
+# Notes on the Windows implementation
+
+Use `signal` system call to install a handler.
+
+This handler will the write signal to a Unix pipe, the reader of which is
+registered with `Poll`.
+
+Would be easy to use `mio-pipe`.

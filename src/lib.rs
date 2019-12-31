@@ -50,6 +50,9 @@ mod sys;
 ///
 /// # Notes
 ///
+/// Only a single `Signals` instance may register a `Signal`. Creating multiple
+/// `Signals` instances with the same or overlapping `SignalSet` is undefined.
+///
 /// On Android and Linux this will block all signals in the signal set given
 /// when creating `Signals`, using [`sigprocmask(2)`]. This means that the
 /// program is not interrupted, or in any way notified of signal until the
@@ -328,6 +331,12 @@ pub enum Signal {
     /// perform a core dump.
     ///
     /// Corresponds to POSIX signal `SIGQUIT`.
+    ///
+    /// # Notes
+    ///
+    /// This signal is not supported on Windows. Registrating with this signal
+    /// is an (effective) no-op, so its safe to use this signal in
+    /// cross-platform application, it will simply never trigger.
     Quit,
 }
 

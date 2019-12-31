@@ -20,6 +20,9 @@ log  = "0.4.8"
 # Need `SourceFd` from `os-util`.
 mio  = { version = "0.7.0-alpha.1", features = ["os-util"] }
 
+# TODO: Windows impl.
+mio-pipe = "0.1.0"
+
 [dev-dependencies]
 # Need `Poll` from `os-poll`.
 mio = { version = "0.7.0-alpha.1", features = ["os-poll"] }

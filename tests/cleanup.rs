@@ -4,6 +4,7 @@
 //!
 //! This needs to run on its own and thus has its own file.
 
+/* TODO: port to pipe.
 use mio_signals::Signal;
 
 #[cfg(any(
@@ -141,3 +142,4 @@ fn raw_signal(signal: Signal) -> libc::c_int {
         Signal::Terminate => libc::SIGTERM,
     }
 }
+*/
