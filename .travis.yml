@@ -8,5 +8,5 @@ matrix:
   fast_finish: false
 language: rust
 rust:
-  - nightly
+  - stable
 script: cargo test --verbose
