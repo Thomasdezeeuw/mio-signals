@@ -1,4 +1,4 @@
-use std::io;
+use std::{io, process};
 
 use mio::{Events, Interest, Poll, Token};
 use mio_signals::{Signal, SignalSet, Signals};
@@ -15,12 +15,13 @@ fn main() -> io::Result<()> {
     poll.registry()
         .register(&mut signals, SIGNAL, Interest::READABLE)?;
 
+    // Now send the process a signal, e.g. by pressing `CTL+C` in a shell,
+    // or calling `kill` on it.
+    println!("Call `kill -s TERM {}` to stop the process", process::id());
+
     loop {
         // Poll for events.
         poll.poll(&mut events, None)?;
-
-        // Now send the process a signal, e.g. by pressing `CTL+C` in a shell,
-        // or calling `kill` on it.
 
         // Process each event.
         for event in events.iter() {

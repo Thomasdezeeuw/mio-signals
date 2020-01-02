@@ -142,10 +142,8 @@ fn example() {
     send_signal(pid, libc::SIGTERM);
 
     let output = read_output(child);
-    assert_eq!(
-        output,
-        "Got interrupt signal\nGot quit signal\nGot terminate signal\n"
-    );
+    let want = format!("Call `kill -s TERM {}` to stop the process\nGot interrupt signal\nGot quit signal\nGot terminate signal\n", pid);
+    assert_eq!(output, want);
 }
 
 /// Wrapper around a `command::Child` that kills the process when dropped, even
