@@ -37,10 +37,10 @@
 // `SignalSet` can never be empty, thus an `is_empty` method doesn't make sense.
 #![allow(clippy::len_without_is_empty)]
 
-use std::io;
 use std::iter::FusedIterator;
 use std::num::NonZeroU8;
 use std::ops::BitOr;
+use std::{fmt, io};
 
 use mio::{event, Interest, Registry, Token};
 
@@ -176,7 +176,7 @@ impl event::Source for Signals {
 /// assert!(!set.contains(Signal::Terminate));
 /// assert!(set.contains(Signal::Interrupt | Signal::Quit));
 /// ```
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct SignalSet(NonZeroU8);
 
 // NOTE: these may never be zero.
@@ -255,6 +255,20 @@ impl IntoIterator for SignalSet {
 
     fn into_iter(self) -> Self::IntoIter {
         SignalSetIter(self.0.get())
+    }
+}
+
+impl fmt::Debug for SignalSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut set = self.into_iter();
+        // As `SignalSet` is never empty, neither is the iterator.
+        let first = set.next().unwrap();
+        first.fmt(f)?;
+        for signal in set {
+            f.write_str("|")?;
+            signal.fmt(f)?;
+        }
+        Ok(())
     }
 }
 
