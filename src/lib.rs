@@ -260,15 +260,7 @@ impl IntoIterator for SignalSet {
 
 impl fmt::Debug for SignalSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut set = self.into_iter();
-        // As `SignalSet` is never empty, neither is the iterator.
-        let first = set.next().unwrap();
-        first.fmt(f)?;
-        for signal in set {
-            f.write_str("|")?;
-            signal.fmt(f)?;
-        }
-        Ok(())
+        self.into_iter().fmt(f)
     }
 }
 
@@ -277,7 +269,6 @@ impl fmt::Debug for SignalSet {
 /// # Notes
 ///
 /// The order in which the signals are iterated over is undefined.
-#[derive(Debug)]
 pub struct SignalSetIter(u8);
 
 impl Iterator for SignalSetIter {
@@ -315,6 +306,23 @@ impl ExactSizeIterator for SignalSetIter {
 }
 
 impl FusedIterator for SignalSetIter {}
+
+impl fmt::Debug for SignalSetIter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut set = SignalSetIter(self.0);
+        if set.len() == 0 {
+            f.write_str("(empty)")
+        } else {
+            let first = set.next().unwrap();
+            first.fmt(f)?;
+            for signal in set {
+                f.write_str("|")?;
+                signal.fmt(f)?;
+            }
+            Ok(())
+        }
+    }
+}
 
 /// Signal returned by [`Signals`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]

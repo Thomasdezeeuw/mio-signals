@@ -46,33 +46,48 @@ fn signal_set() {
             SignalSet::all(),
             3,
             vec![Signal::Interrupt, Signal::Terminate, Signal::Quit],
+            "Interrupt|Quit|Terminate",
         ),
-        (Signal::Interrupt.into(), 1, vec![Signal::Interrupt]),
-        (Signal::Terminate.into(), 1, vec![Signal::Terminate]),
-        (Signal::Quit.into(), 1, vec![Signal::Quit]),
+        (
+            Signal::Interrupt.into(),
+            1,
+            vec![Signal::Interrupt],
+            "Interrupt",
+        ),
+        (
+            Signal::Terminate.into(),
+            1,
+            vec![Signal::Terminate],
+            "Terminate",
+        ),
+        (Signal::Quit.into(), 1, vec![Signal::Quit], "Quit"),
         (
             Signal::Interrupt | Signal::Terminate,
             2,
             vec![Signal::Interrupt, Signal::Terminate],
+            "Interrupt|Terminate",
         ),
         (
             Signal::Interrupt | Signal::Quit,
             2,
             vec![Signal::Interrupt, Signal::Quit],
+            "Interrupt|Quit",
         ),
         (
             Signal::Terminate | Signal::Quit,
             2,
             vec![Signal::Terminate, Signal::Quit],
+            "Quit|Terminate",
         ),
         (
             Signal::Interrupt | Signal::Terminate | Signal::Quit,
             3,
             vec![Signal::Interrupt, Signal::Terminate, Signal::Quit],
+            "Interrupt|Quit|Terminate",
         ),
     ];
 
-    for (set, size, expected) in tests {
+    for (set, size, expected, expected_fmt) in tests {
         let set: SignalSet = set;
         assert_eq!(set.len(), size);
 
@@ -99,6 +114,11 @@ fn signal_set() {
         for expected in expected {
             assert!(signals.contains(&expected));
         }
+
+        let got_fmt = format!("{:?}", set);
+        let got_iter_fmt = format!("{:?}", set.into_iter());
+        assert_eq!(got_fmt, expected_fmt);
+        assert_eq!(got_iter_fmt, expected_fmt);
     }
 }
 
