@@ -74,6 +74,7 @@ mod sys;
 /// [`signalfd(2)`]: http://man7.org/linux/man-pages/man2/signalfd.2.html
 ///
 /// # Examples
+///
 /// ```
 /// use std::io;
 ///
@@ -367,4 +368,60 @@ impl BitOr<SignalSet> for Signal {
     fn bitor(self, rhs: SignalSet) -> SignalSet {
         rhs | self
     }
+}
+
+/// Send `signal` to the process with `pid`.
+///
+/// # Examples
+///
+/// Send ourselves a signal.
+///
+/// ```
+/// use std::{io, process};
+///
+/// use mio::{Poll, Events, Interest, Token};
+/// use mio_signals::{Signals, Signal, SignalSet, send_signal};
+///
+/// const SIGNAL: Token = Token(10);
+///
+/// fn main() -> io::Result<()> {
+///     let mut poll = Poll::new()?;
+///     let mut events = Events::with_capacity(8);
+///
+///     // Create a `Signals` instance that will catch signals for us.
+///     let mut signals = Signals::new(SignalSet::all())?;
+///     // And register it with our `Poll` instance.
+///     poll.registry().register(&mut signals, SIGNAL, Interest::READABLE)?;
+///
+///     // Send ourselves a signal.
+///     send_signal(process::id(), Signal::Interrupt)?;
+///
+///     loop {
+///         poll.poll(&mut events, None)?;
+///
+///         for event in events.iter() {
+///             match event.token() {
+///                 // Because we're using edge triggers (default in Mio) we need
+///                 // to keep calling `receive` until it returns `Ok(None)`.
+///                 SIGNAL => loop {
+///                     match signals.receive()? {
+///                         Some(Signal::Interrupt) => {
+///                             println!("Got interrupt signal");
+///                             return Ok(());
+///                         },
+///                         Some(signal) => {
+///                             println!("Got unexpected signal: {:?}", signal);
+///                             return Err(io::Error::new(io::ErrorKind::Other, "unexpected signal"));
+///                         },
+///                         None => break,
+///                     }
+///                 },
+///                 _ => println!("Got unexpected event: {:?}", event),
+///             }
+///         }
+///     }
+/// }
+/// ```
+pub fn send_signal(pid: u32, signal: Signal) -> io::Result<()> {
+    sys::send_signal(pid, signal)
 }

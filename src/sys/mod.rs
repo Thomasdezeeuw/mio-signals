@@ -28,6 +28,15 @@ mod signalfd;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub use self::signalfd::Signals;
 
+#[cfg(unix)]
+pub fn send_signal(pid: u32, signal: Signal) -> std::io::Result<()> {
+    if unsafe { libc::kill(pid as libc::pid_t, raw_signal(signal)) } != 0 {
+        Err(std::io::Error::last_os_error())
+    } else {
+        Ok(())
+    }
+}
+
 // TODO: add Windows implementation.
 
 /// Convert a `signal` into a Unix signal.
