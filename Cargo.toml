@@ -1,7 +1,7 @@
 [package]
 name          = "mio-signals"
 description   = "Crate for handling signals with Mio."
-version       = "0.1.1"
+version       = "0.1.2"
 authors       = ["Thomas de Zeeuw <thomasdezeeuw@gmail.com>"]
 license       = "MIT"
 documentation = "https://docs.rs/mio-signals"
