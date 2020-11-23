@@ -15,11 +15,7 @@ edition       = "2018"
 travis-ci = { repository = "Thomasdezeeuw/mio-signals", branch = "master" }
 
 [dependencies]
-libc = "0.2.71"
-log  = "0.4.8"
+libc = "0.2.80"
+log  = "0.4.11"
 # Need `SourceFd` from `os-util`.
-mio  = { version = "0.7.0", features = ["os-util"] }
-
-[dev-dependencies]
-# Need `Poll` from `os-poll`.
-mio = { version = "0.7.0", features = ["os-poll"] }
+mio  = { version = "0.7.6", features = ["os-ext"] }
