@@ -1,11 +1,11 @@
-use std::io::{self, Read};
+use std::io::Read;
 use std::ops::{Deref, DerefMut};
 use std::panic;
 use std::process::{Child, Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
 
-use mio_signals::{Signal, SignalSet, Signals};
+use mio_signals::{send_signal, Signal, SignalSet, Signals};
 
 #[test]
 fn signal_bit_or() {
@@ -155,11 +155,11 @@ fn example() {
     // Give the process some time to startup.
     sleep(Duration::from_millis(200));
 
-    let pid = child.id() as libc::pid_t;
+    let pid = child.id() as u32;
 
-    send_signal(pid, libc::SIGINT);
-    send_signal(pid, libc::SIGQUIT);
-    send_signal(pid, libc::SIGTERM);
+    send_signal(pid, Signal::Interrupt).unwrap();
+    send_signal(pid, Signal::Quit).unwrap();
+    send_signal(pid, Signal::Terminate).unwrap();
 
     let output = read_output(child);
     let want = format!("Call `kill -s TERM {}` to stop the process\nGot interrupt signal\nGot quit signal\nGot terminate signal\n", pid);
@@ -227,13 +227,6 @@ fn start_example(name: &'static str) -> ChildCommand {
         .spawn()
         .map(|inner| ChildCommand { inner })
         .expect("unable to run example")
-}
-
-fn send_signal(pid: libc::pid_t, signal: libc::c_int) {
-    if unsafe { libc::kill(pid, signal) } == -1 {
-        let err = io::Error::last_os_error();
-        panic!("error sending signal: {}", err);
-    }
 }
 
 /// Read the standard output of the child command.
