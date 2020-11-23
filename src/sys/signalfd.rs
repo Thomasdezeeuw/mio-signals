@@ -105,10 +105,11 @@ fn unblock_signals(set: &libc::sigset_t) -> io::Result<()> {
 }
 
 fn sigprocmask(how: libc::c_int, set: &libc::sigset_t) -> io::Result<()> {
-    if unsafe { libc::sigprocmask(how, set, ptr::null_mut()) } == -1 {
-        Err(io::Error::last_os_error())
-    } else {
+    let errno = unsafe { libc::pthread_sigmask(how, set, ptr::null_mut()) };
+    if errno == 0 {
         Ok(())
+    } else {
+        Err(io::Error::from_raw_os_error(errno))
     }
 }
 
