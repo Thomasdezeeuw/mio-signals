@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.3
+
+* Replace `sigprocmask` with `pthread_sigmask`.
+* Add license file.
+
 ## v0.1.2
 
 * Added `send_signal`: function to send a signal to a process.
