@@ -1,6 +1,5 @@
 use std::io::Read;
 use std::ops::{Deref, DerefMut};
-use std::panic;
 use std::process::{Child, Command, Stdio};
 use std::thread::sleep;
 use std::time::Duration;
@@ -198,28 +197,6 @@ impl Drop for ChildCommand {
 /// Run an example, not waiting for it to complete, but it does wait for it to
 /// be build.
 fn run_example(name: &'static str) -> ChildCommand {
-    build_example(name);
-    start_example(name)
-}
-
-/// Build the example with the given name.
-fn build_example(name: &'static str) {
-    let output = Command::new("cargo")
-        .args(&["build", "--example", name])
-        .output()
-        .expect("unable to build example");
-
-    if !output.status.success() {
-        panic!(
-            "failed to build example: {}\n\n{}",
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
-}
-
-/// Start and already build example
-fn start_example(name: &'static str) -> ChildCommand {
     Command::new(format!("target/debug/examples/{}", name))
         .stdin(Stdio::null())
         .stderr(Stdio::piped())
