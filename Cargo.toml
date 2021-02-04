@@ -19,3 +19,7 @@ libc = "0.2.80"
 log  = "0.4.11"
 # Need `SourceFd` from `os-util`.
 mio  = { version = "0.7.6", features = ["os-ext"] }
+
+[[test]]
+name    = "multi_threaded"
+harness = false
