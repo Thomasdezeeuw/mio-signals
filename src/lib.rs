@@ -51,16 +51,16 @@ mod sys;
 /// # Notes
 ///
 /// On Android and Linux this will block all signals in the signal set given
-/// when creating `Signals`, using [`sigprocmask(2)`]. This means that the
-/// program is not interrupted, or in any way notified of signal until the
-/// assiocated [`Poll`] is [polled].
+/// when creating `Signals`, using [`pthread_sigmask(3)`]. This means that the
+/// thread in which `Signals` was created is not interrupted, or in any way
+/// notified of signal until the assiocated [`Poll`] is [polled].
 ///
 /// On platforms that support [`kqueue(2)`] the signal handler action is set to
 /// `SIG_IGN` using [`sigaction(2)`], meaning that all signals will be ignored.
 /// Same as on Linux based systems; the program is not interrupted, or in any way
 /// notified of signal until the assiocated [`Poll`] is [polled].
 ///
-/// [`sigprocmask(2)`]: http://man7.org/linux/man-pages/man2/sigprocmask.2.html
+/// [`pthread_sigmask(3)`]: https://man7.org/linux/man-pages/man3/pthread_sigmask.3.html
 /// [`Poll`]: mio::Poll
 /// [polled]: mio::Poll::poll
 /// [`kqueue(2)`]: https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
