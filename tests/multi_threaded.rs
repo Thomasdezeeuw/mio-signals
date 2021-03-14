@@ -1,5 +1,5 @@
 use std::sync::mpsc::{channel, Receiver};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::{io, process, thread};
 
 use mio::{Events, Interest, Poll, Token};
@@ -9,6 +9,9 @@ const SIGNAL: Token = Token(10);
 const TIMEOUT: Duration = Duration::from_secs(1);
 
 fn main() -> io::Result<()> {
+    let start = Instant::now();
+    println!("\nrunning 1 test");
+
     let mut poll = Poll::new()?;
     let mut events = Events::with_capacity(8);
 
@@ -38,6 +41,9 @@ fn main() -> io::Result<()> {
                             sender.send(()).unwrap();
                             handle.join().unwrap();
                         }
+
+                        println!("test multi_threaded ... ok\n");
+                        println!("test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in {:?}\n", start.elapsed());
                         return Ok(());
                     }
                     Some(signal) => println!("Unexpected signal: {:?}", signal),

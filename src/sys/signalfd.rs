@@ -46,7 +46,7 @@ impl Signals {
             let n = unsafe {
                 libc::read(
                     self.fd,
-                    info.as_mut_ptr() as *mut _,
+                    info.as_mut_ptr().cast(),
                     size_of::<libc::signalfd_siginfo>(),
                 )
             };
