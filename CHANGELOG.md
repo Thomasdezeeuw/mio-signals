@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.4
+
+* Document correct usage in multithreaded process.
+* Document use of `pthread_sigmask(3)` instead of `sigprocmask(2)`.
+
 ## v0.1.3
 
 * Replace `sigprocmask` with `pthread_sigmask`.
