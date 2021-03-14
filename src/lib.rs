@@ -48,6 +48,17 @@ mod sys;
 
 /// Notification of process signals.
 ///
+/// # Multithreaded process
+///
+/// For `Signals` to function correctly in multithreaded processes it must be
+/// created on the main thread **before** spawning any threads. This is due to
+/// an implementation detail where the spawned threads must inherit various
+/// signal related thread options from the parent thread (mainly the blocked
+/// signals on Linux).
+///
+/// Any threads spawned before calling `Signals::new` will experience the
+/// default process signals behaviour, i.e. sending it a signal will stop it.
+///
 /// # Notes
 ///
 /// On Android and Linux this will block all signals in the signal set given
