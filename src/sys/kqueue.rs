@@ -78,11 +78,8 @@ fn new_kqueue() -> io::Result<RawFd> {
 fn register_signals(kq: RawFd, signals: SignalSet) -> io::Result<()> {
     // For each signal create an kevent to indicate we want events for
     // those signals.
-    let mut changes: [MaybeUninit<libc::kevent>; SignalSet::all().len()] = [
-        MaybeUninit::uninit(),
-        MaybeUninit::uninit(),
-        MaybeUninit::uninit(),
-    ];
+    let mut changes: [MaybeUninit<libc::kevent>; SignalSet::all().len()] =
+        [MaybeUninit::uninit(); SignalSet::all().len()];
     let mut n_changes = 0;
     for signal in signals {
         changes[n_changes] = MaybeUninit::new(libc::kevent {

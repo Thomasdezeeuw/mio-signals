@@ -37,6 +37,8 @@ fn main() -> io::Result<()> {
                             println!("Got terminate signal");
                             return Ok(());
                         }
+                        Some(Signal::User1) => println!("Got user signal 1"),
+                        Some(Signal::User2) => println!("Got user signal 2"),
                         None => break, // No more signals.
                     }
                 },

@@ -139,5 +139,7 @@ fn raw_signal(signal: Signal) -> libc::c_int {
         Signal::Interrupt => libc::SIGINT,
         Signal::Quit => libc::SIGQUIT,
         Signal::Terminate => libc::SIGTERM,
+        Signal::User1 => libc::SIGUSR1,
+        Signal::User2 => libc::SIGUSR2,
     }
 }

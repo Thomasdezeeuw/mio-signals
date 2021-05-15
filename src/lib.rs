@@ -119,6 +119,8 @@ mod sys;
 ///                         Some(Signal::Interrupt) => println!("Got interrupt signal"),
 ///                         Some(Signal::Terminate) => println!("Got terminate signal"),
 ///                         Some(Signal::Quit) => println!("Got quit signal"),
+///                         Some(Signal::User1) => println!("Got user signal 1"),
+///                         Some(Signal::User2) => println!("Got user signal 2"),
 ///                         None => break,
 ///                     }
 ///                 },
@@ -195,11 +197,13 @@ pub struct SignalSet(NonZeroU8);
 const INTERRUPT: u8 = 1;
 const QUIT: u8 = 1 << 1;
 const TERMINATE: u8 = 1 << 2;
+const USER1: u8 = 1 << 3;
+const USER2: u8 = 1 << 4;
 
 impl SignalSet {
     /// Create a new set with all signals.
     pub const fn all() -> SignalSet {
-        SignalSet(unsafe { NonZeroU8::new_unchecked(INTERRUPT | QUIT | TERMINATE) })
+        SignalSet(unsafe { NonZeroU8::new_unchecked(INTERRUPT | QUIT | TERMINATE | USER1 | USER2) })
     }
 
     /// Number of signals in the set.
@@ -240,6 +244,8 @@ impl From<Signal> for SignalSet {
                 Signal::Interrupt => INTERRUPT,
                 Signal::Quit => QUIT,
                 Signal::Terminate => TERMINATE,
+                Signal::User1 => USER1,
+                Signal::User2 => USER2,
             })
         })
     }
@@ -292,6 +298,8 @@ impl Iterator for SignalSetIter {
             0 => Some(Signal::Interrupt),
             1 => Some(Signal::Quit),
             2 => Some(Signal::Terminate),
+            3 => Some(Signal::User1),
+            4 => Some(Signal::User2),
             _ => None,
         }
         .map(|signal| {
@@ -336,7 +344,7 @@ impl fmt::Debug for SignalSetIter {
     }
 }
 
-/// Signal returned by [`Signals`].
+/// Process signal returned by [`Signals`].
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Signal {
     /// Interrupt signal.
@@ -363,6 +371,14 @@ pub enum Signal {
     ///
     /// Corresponds to POSIX signal `SIGQUIT`.
     Quit,
+    /// User-defined signal 1.
+    ///
+    /// Corresponds to POSIX signal `SIGUSR1`.
+    User1,
+    /// User-defined signal 2.
+    ///
+    /// Corresponds to POSIX signal `SIGUSR2`.
+    User2,
 }
 
 impl BitOr for Signal {
