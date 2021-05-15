@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.5
+
+* Add `Signal::User1` (`SIGUSR1`) and `Signal::User2` (`SIGUSR2`).
+
 ## v0.1.4
 
 * Document correct usage in multithreaded process.
