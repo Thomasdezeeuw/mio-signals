@@ -45,6 +45,8 @@ fn raw_signal(signal: Signal) -> libc::c_int {
         Signal::Interrupt => libc::SIGINT,
         Signal::Quit => libc::SIGQUIT,
         Signal::Terminate => libc::SIGTERM,
+        Signal::User1 => libc::SIGUSR1,
+        Signal::User2 => libc::SIGUSR2,
     }
 }
 
@@ -54,6 +56,8 @@ fn from_raw_signal(raw_signal: libc::c_int) -> Option<Signal> {
         libc::SIGINT => Some(Signal::Interrupt),
         libc::SIGQUIT => Some(Signal::Quit),
         libc::SIGTERM => Some(Signal::Terminate),
+        libc::SIGUSR1 => Some(Signal::User1),
+        libc::SIGUSR2 => Some(Signal::User2),
         _ => None,
     }
 }
@@ -63,6 +67,8 @@ fn test_from_raw_signal() {
     assert_eq!(from_raw_signal(libc::SIGINT), Some(Signal::Interrupt));
     assert_eq!(from_raw_signal(libc::SIGQUIT), Some(Signal::Quit));
     assert_eq!(from_raw_signal(libc::SIGTERM), Some(Signal::Terminate));
+    assert_eq!(from_raw_signal(libc::SIGUSR1), Some(Signal::User1));
+    assert_eq!(from_raw_signal(libc::SIGUSR2), Some(Signal::User2));
 
     // Unsupported signals.
     assert_eq!(from_raw_signal(libc::SIGSTOP), None);
@@ -73,6 +79,8 @@ fn test_raw_signal() {
     assert_eq!(raw_signal(Signal::Interrupt), libc::SIGINT);
     assert_eq!(raw_signal(Signal::Quit), libc::SIGQUIT);
     assert_eq!(raw_signal(Signal::Terminate), libc::SIGTERM);
+    assert_eq!(raw_signal(Signal::User1), libc::SIGUSR1);
+    assert_eq!(raw_signal(Signal::User2), libc::SIGUSR2);
 }
 
 #[test]
@@ -88,5 +96,13 @@ fn raw_signal_round_trip() {
     assert_eq!(
         raw_signal(from_raw_signal(libc::SIGTERM).unwrap()),
         libc::SIGTERM
+    );
+    assert_eq!(
+        raw_signal(from_raw_signal(libc::SIGUSR1).unwrap()),
+        libc::SIGUSR1
+    );
+    assert_eq!(
+        raw_signal(from_raw_signal(libc::SIGUSR2).unwrap()),
+        libc::SIGUSR2
     );
 }

@@ -10,7 +10,7 @@ use mio_signals::{send_signal, Signal, SignalSet, Signals};
 fn signal_bit_or() {
     // `Signal` and `Signal` (and `Signal`).
     assert_eq!(
-        Signal::Terminate | Signal::Quit | Signal::Interrupt,
+        Signal::Terminate | Signal::Quit | Signal::Interrupt | Signal::User1 | Signal::User2,
         SignalSet::all()
     );
     // `Signal` and `SignalSet`.
@@ -43,9 +43,15 @@ fn signal_set() {
     let tests = vec![
         (
             SignalSet::all(),
-            3,
-            vec![Signal::Interrupt, Signal::Terminate, Signal::Quit],
-            "Interrupt|Quit|Terminate",
+            5,
+            vec![
+                Signal::Interrupt,
+                Signal::Terminate,
+                Signal::Quit,
+                Signal::User1,
+                Signal::User2,
+            ],
+            "Interrupt|Quit|Terminate|User1|User2",
         ),
         (
             Signal::Interrupt.into(),
@@ -83,6 +89,12 @@ fn signal_set() {
             3,
             vec![Signal::Interrupt, Signal::Terminate, Signal::Quit],
             "Interrupt|Quit|Terminate",
+        ),
+        (
+            Signal::Interrupt | Signal::User1 | Signal::User2,
+            3,
+            vec![Signal::Interrupt, Signal::User1, Signal::User1],
+            "Interrupt|User1|User2",
         ),
     ];
 
@@ -123,8 +135,16 @@ fn signal_set() {
 
 #[test]
 fn signal_set_iter_length() {
-    let set = Signal::Interrupt | Signal::Terminate | Signal::Quit;
+    let set = Signal::Interrupt | Signal::Terminate | Signal::Quit | Signal::User1 | Signal::User2;
     let mut iter = set.into_iter();
+
+    assert!(iter.next().is_some());
+    assert_eq!(iter.len(), 4);
+    assert_eq!(iter.size_hint(), (4, Some(4)));
+
+    assert!(iter.next().is_some());
+    assert_eq!(iter.len(), 3);
+    assert_eq!(iter.size_hint(), (3, Some(3)));
 
     assert!(iter.next().is_some());
     assert_eq!(iter.len(), 2);
@@ -156,12 +176,14 @@ fn example() {
 
     let pid = child.id() as u32;
 
+    send_signal(pid, Signal::User1).unwrap();
+    send_signal(pid, Signal::User2).unwrap();
     send_signal(pid, Signal::Interrupt).unwrap();
     send_signal(pid, Signal::Quit).unwrap();
     send_signal(pid, Signal::Terminate).unwrap();
 
     let output = read_output(child);
-    let want = format!("Call `kill -s TERM {}` to stop the process\nGot interrupt signal\nGot quit signal\nGot terminate signal\n", pid);
+    let want = format!("Call `kill -s TERM {}` to stop the process\nGot user signal 1\nGot user signal 2\nGot interrupt signal\nGot quit signal\nGot terminate signal\n", pid);
     assert_eq!(output, want);
 }
 
