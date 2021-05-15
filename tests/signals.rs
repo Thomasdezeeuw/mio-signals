@@ -183,6 +183,12 @@ fn example() {
     send_signal(pid, Signal::Terminate).unwrap();
 
     let output = read_output(child);
+    // On Linux the signals seem to be delivered out of order, which is
+    // perfectly fine, but does change the output.
+    // In the end we do get all signals, which is what we want.
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    let want = format!("Call `kill -s TERM {}` to stop the process\nGot interrupt signal\nGot quit signal\nGot user signal 1\nGot user signal 2\nGot terminate signal\n", pid);
+    #[cfg(not(any(target_os = "linux", target_os = "android")))]
     let want = format!("Call `kill -s TERM {}` to stop the process\nGot user signal 1\nGot user signal 2\nGot interrupt signal\nGot quit signal\nGot terminate signal\n", pid);
     assert_eq!(output, want);
 }
