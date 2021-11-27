@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.0
+
+* Updated to Mio v0.8.
+
 ## v0.1.5
 
 * Add `Signal::User1` (`SIGUSR1`) and `Signal::User2` (`SIGUSR2`).
