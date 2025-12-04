@@ -103,7 +103,7 @@ fn signal_set() {
         assert_eq!(set.len(), size);
 
         // Test `contains`.
-        let mut contains_iter = (&expected).iter().cloned();
+        let mut contains_iter = expected.iter().cloned();
         while let Some(signal) = contains_iter.next() {
             assert!(set.contains(signal));
             assert!(set.contains::<SignalSet>(signal.into()));

@@ -58,5 +58,5 @@ fn main() -> io::Result<()> {
 }
 
 fn wait_for_msg(receiver: Receiver<()>) {
-    let _ = receiver.recv().unwrap();
+    _ = receiver.recv().unwrap();
 }
