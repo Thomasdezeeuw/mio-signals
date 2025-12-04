@@ -10,39 +10,50 @@ env:
 jobs:
   Test:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-    - uses: actions/checkout@v2
-    - name: Rustc version
-      run: rustc -Vv
-    - name: Cargo version
-      run: cargo -Vv
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
     - name: Run tests
       run: cargo test --verbose
+  MSRV:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: "1.71"
+    - name: Check
+      # We only run check allowing us to use newer features in tests.
+      run: cargo check
   Clippy:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v2
-    - name: Add Clippy
-      run: rustup component add clippy
-    - name: Rustc version
-      run: rustc -Vv
-    - name: Cargo version
-      run: cargo -Vv
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
     - name: Check Clippy
       run: cargo clippy --all-targets
   Rustfmt:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
     - name: Add rustfmt
       run: rustup component add rustfmt
-    - name: Rustc version
-      run: rustc -Vv
-    - name: Cargo version
-      run: cargo -Vv
     - name: Check formatting
       run: cargo fmt --all -- --check
