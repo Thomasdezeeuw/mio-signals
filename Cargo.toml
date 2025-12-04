@@ -9,7 +9,8 @@ repository    = "https://github.com/Thomasdezeeuw/mio-signals"
 readme        = "README.md"
 keywords      = ["signals", "mio"]
 include       = ["/Cargo.toml", "/src/**/*.rs", "/README.md", "/LICENSE"]
-edition       = "2018"
+edition       = "2021"
+rust-version  = "1.71"
 
 [badges]
 travis-ci = { repository = "Thomasdezeeuw/mio-signals", branch = "master" }
