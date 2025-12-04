@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.0
+
+* **BREAKING** Updated MSRV to 1.71. This matches Mio v1.1.
+* Updated to Mio v1.1.
+* Fix compilation on FreeBSD.
+
 ## v0.2.0
 
 * Updated to Mio v0.8.
