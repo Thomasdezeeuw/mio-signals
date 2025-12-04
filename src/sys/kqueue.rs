@@ -86,9 +86,8 @@ fn register_signals(kq: RawFd, signals: SignalSet) -> io::Result<()> {
             ident: raw_signal(signal) as libc::uintptr_t,
             filter: libc::EVFILT_SIGNAL,
             flags: libc::EV_ADD,
-            fflags: 0,
-            data: 0,
-            udata: 0 as _,
+            // SAFETY: all zeros is valid for `kevent`.
+            ..unsafe { std::mem::zeroed() }
         });
         n_changes += 1;
     }
